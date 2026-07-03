@@ -1,21 +1,33 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { pool } from '../config/database.js';
 
-const DEMO_USER = {
-  id: 1,
-  email: 'admin@example.com',
-  passwordHash: bcrypt.hashSync('Password123!', 10),
-  name: 'Administrator',
-};
+// const DEMO_USER = {
+//   id: 1,
+//   email: 'admin@example.com',
+//   passwordHash: bcrypt.hashSync('Password123!', 10),
+//   name: 'Administrator',
+// };
 
 export async function login(email: string, password: string) {
-  if (email !== DEMO_USER.email) {
+  const result = await pool.query(
+    `
+    SELECT *
+    FROM users
+    WHERE email = $1
+    `,
+    [email]
+  );
+
+  console.log('result', result.rows[0]);
+
+  if (email !== result.rows[0].email) {
     throw new Error('Invalid credentials!');
   }
 
   const validPassword = await bcrypt.compare(
     password,
-    DEMO_USER.passwordHash
+    result.rows[0].password_hash
   );
 
   if (!validPassword) {
@@ -24,8 +36,8 @@ export async function login(email: string, password: string) {
 
   const token = jwt.sign(
     {
-      id: DEMO_USER.id,
-      email: DEMO_USER.email,
+      id: result.rows[0].id,
+      email: result.rows[0].email,
     },
     process.env.JWT_SECRET!,
     {
@@ -36,9 +48,9 @@ export async function login(email: string, password: string) {
   return {
     accessToken: token,
     user: {
-      id: DEMO_USER.id,
-      name: DEMO_USER.name,
-      email: DEMO_USER.email,
+      id: result.rows[0].id,
+      name: result.rows[0].name,
+      email: result.rows[0].email,
     },
   };
 }

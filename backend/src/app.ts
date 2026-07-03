@@ -5,10 +5,14 @@ import healthRoutes from './routes/health.routes.js';
 import versionRoutes from './routes/version.routes.js';
 import authRoutes from './routes/auth.routes.js';
 
+import { testDatabaseConnection } from './database/testConnection.js';
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+await testDatabaseConnection();
 
 app.use(healthRoutes);
 app.use(versionRoutes);
