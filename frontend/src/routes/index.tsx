@@ -1,8 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
 
-import AppLayout from '../layouts/AppLayout';
+// import AppLayout from '../layouts/AppLayout';
+import DashboardLayout from '../components/layout/DashboardLayout';
 
-import Dashboard from '../pages/Dashboard/Dashboard';
+import Dashboard from '../pages/Dashboard/DashboardPage';
 import Chat from '../pages/Chat/Chat';
 import Agents from '../pages/Agents/Agents';
 import Models from '../pages/Models/Models';
@@ -12,7 +13,7 @@ import Settings from '../pages/Settings/Settings';
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route element={<DashboardLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/agents" element={<Agents />} />
