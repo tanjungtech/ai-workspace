@@ -4,3 +4,5 @@ variables:
     value: http://localhost:3010
   - name: token
     value: ""
+  - name: CONVERSATION_ID
+    value: "1"

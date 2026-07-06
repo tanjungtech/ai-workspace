@@ -1,0 +1,10 @@
+{
+  "development": {
+    "driver": "pg",
+    "host": "localhost",
+    "port": 5432,
+    "database": "ai_workspace",
+    "user": "faridtanjung",
+    "password": "asdasd"
+  }
+}

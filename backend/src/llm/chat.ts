@@ -1,9 +1,11 @@
+// import { openai } from "../providers/openai.provider.js";
 import { openai } from "../providers/openai.provider.js";
 import { SYSTEM_PROMPT } from "../prompts/system.prompt.js";
+import type { LLMMessage } from "./types.js";
 
 export async function generateResponse(
-  prompt: string
-){
+  history: LLMMessage[]
+): Promise<string> {
   const response =
     await openai.chat.completions.create({
       model: process.env.MODEL!,
@@ -13,11 +15,11 @@ export async function generateResponse(
           role: "system",
           content: SYSTEM_PROMPT,
         },
-        {
-          role: "user",
-          content: prompt,
-        },
+        ...history,
       ],
     });
-  return response.choices[0]?.message.content;
+  return (
+    response.choices[0]?.message.content ??
+    ""
+  );
 }

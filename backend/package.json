@@ -6,7 +6,10 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx watch src/server.ts",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "db:create": "node-pg-migrate create",
+    "db:up": "node-pg-migrate up",
+    "db:down": "node-pg-migrate down"
   },
   "keywords": [],
   "author": "",
@@ -34,6 +37,7 @@
     "@types/pg": "^8.20.0",
     "@types/uuid": "^10.0.0",
     "eslint": "^10.6.0",
+    "node-pg-migrate": "^8.0.4",
     "prettier": "^3.9.4",
     "tsx": "^4.23.0",
     "typescript": "^6.0.3",

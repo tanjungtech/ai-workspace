@@ -8,12 +8,29 @@ export async function chat(
   req: Request,
   res: Response
 ) {
-  const { prompt } = chatSchema.parse(req.body);
+  try {
+    const {
+      conversationId,
+      prompt
+    } = req.body;
 
-  const response =
-    await chatService.chat(prompt);
+    const result =
+      await chatService.chat({
+        conversationId,
+        prompt
+      });
 
-  res.json({
-    message: response,
-  });
+    return res.status(200).json({
+      success: true,
+      conversation: result.conversation,
+      message: result.assistantMessage
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
 }

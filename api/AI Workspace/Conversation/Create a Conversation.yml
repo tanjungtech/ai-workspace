@@ -1,0 +1,21 @@
+info:
+  name: Create a Conversation
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/conversations"
+  body:
+    type: json
+    data: |-
+      {
+        "title": "Learning AI"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
