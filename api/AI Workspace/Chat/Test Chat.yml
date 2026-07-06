@@ -1,0 +1,21 @@
+info:
+  name: Test Chat
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{baseUrl}}/chat"
+  body:
+    type: json
+    data: |-
+      {
+        "prompt": "Explain JWT authentication."
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
