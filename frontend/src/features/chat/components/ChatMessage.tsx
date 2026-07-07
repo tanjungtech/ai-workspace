@@ -1,13 +1,20 @@
-import type { Message } from "../types/message";
+// import type { Message } from "../types/message";
+import MarkdownMessage from "./MarkdownMessage";
 
-type ChatMessageProps = {
-  message: Message;
+// type ChatMessageProps = {
+//   message: Message;
+// };
+
+type Props = {
+  role: "user" | "assistant";
+  content: string;
 };
 
 export default function ChatMessage({
-  message,
-}: ChatMessageProps) {
-  const isUser = message.role === "user";
+  role,
+  content,
+}: Props) {
+  const isUser = role === "user";
 
   return (
     <div
@@ -17,12 +24,14 @@ export default function ChatMessage({
       }`}
     >
       <div
-        className={`max-w-3xl rounded-xl px-4 py-3 ${
+        className={`max-w-4xl rounded-xl px-5 py-4 shadow ${
           isUser
-            ? "bg-blue-600 text-white" : "bg-white border"
+            ? "bg-blue-600 text-white" : "bg-white"
         }`}
       >
-        {message.content}
+        <MarkdownMessage
+          content={content}
+        />
       </div>
     </div>
   )
