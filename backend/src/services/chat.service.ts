@@ -5,6 +5,7 @@ import { generateResponse } from "../llm/chat.js";
 // import { generateResponse } from "../providers/mock.provider.js";
 
 import type { LLMMessage } from "../llm/types.js";
+import { buildPrompt } from "../prompts/buildPrompt.js";
 
 type ChatInput = {
   conversationId?: string;
@@ -55,7 +56,12 @@ export async function chat({
 
   // Step 6
   // Ask AI
-  const answer = await generateResponse(history);
+  const setupPromp = buildPrompt(
+    "general",
+    history
+  );
+
+  const answer = await generateResponse(setupPromp);
 
   // Step 7
   // Save assistant response
