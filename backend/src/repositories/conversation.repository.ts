@@ -1,12 +1,15 @@
 import { pool } from "../config/database.js";
 
-export async function findAll() {
+export async function findAll(page: number, limit: number) {
   const result = await pool.query(
     `
     SELECT *
     FROM conversations
     ORDER BY updated_at DESC
-    `    
+    LIMIT $2
+    OFFSET ($1 - 1) * $2
+    `,
+    [page, limit]
   );
 
   return result.rows;

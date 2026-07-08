@@ -6,6 +6,7 @@ import versionRoutes from './routes/version.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import userRoutes from './routes/user.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import conversationRoutes from "./routes/conversation.routes.js";
 
 import { testDatabaseConnection } from './database/testConnection.js';
 
@@ -21,5 +22,6 @@ app.use(versionRoutes);
 app.use(authRoutes);
 app.use(userRoutes);
 app.use(chatRoutes);
+app.use(conversationRoutes);
 
 export default app;
