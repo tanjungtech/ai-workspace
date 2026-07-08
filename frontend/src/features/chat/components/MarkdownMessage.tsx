@@ -1,16 +1,23 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-type MarkdownMessageProps = {
+import { markdownComponents } from "./StyledMarkdown";
+
+// type MarkdownMessageProps = {
+//   content: string;
+// };
+
+type Props = {
   content: string;
 };
 
 export default function MarkdownMessage({
   content,
-}: MarkdownMessageProps) {
+}: Props) {
   return (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
+      components={markdownComponents}
     >
       {content}
     </ReactMarkdown>

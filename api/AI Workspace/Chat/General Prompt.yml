@@ -1,19 +1,17 @@
 info:
-  name: Stream Chat
+  name: General Prompt
   type: http
-  seq: 1
+  seq: 2
 
 http:
   method: POST
-  url: "{{baseUrl}}/chat/stream"
-  headers:
-    - name: Content-Type
-      value: application/json
+  url: "{{baseUrl}}/chat"
   body:
     type: json
     data: |-
       {
         "conversationId": "demo",
+        "assistantType": "general",
         "message": "Explain JWT authentication"
       }
   auth: inherit

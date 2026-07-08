@@ -1,7 +1,7 @@
 info:
-  name: Test Chat
+  name: Coding Prompt
   type: http
-  seq: 1
+  seq: 3
 
 http:
   method: POST
@@ -10,7 +10,9 @@ http:
     type: json
     data: |-
       {
-        "prompt": "Hello AI"
+        "conversationId": "demo",
+        "assistantType": "coding",
+        "message": "Explain JWT authentication"
       }
   auth: inherit
 
