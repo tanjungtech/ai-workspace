@@ -5,9 +5,13 @@ import * as messageRepository from "../repositories/message.repository.js";
 
 import { generateResponse } from "../llm/chat.js";
 // import { generateResponse } from "../providers/mock.provider.js";
+import { llm } from "../llm/llm.provider.js";
 
 import type { LLMMessage } from "../llm/types.js";
 import { buildPrompt } from "../prompts/buildPrompt.js";
+import { formatResponse } from '../prompts/response.format.js';
+
+import { logTokenUsage } from '../utils/token.logger.js';
 
 type ChatInput = {
   conversationId?: string;
@@ -91,38 +95,80 @@ export async function stream(
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
-  const tokens = [
-    "Hello ",
-    "this ",
-    "is ",
-    "a ",
-    "streaming ",
-    "response.",
-  ];
+  const { conversationId, message, }: {
+    conversationId?: string;
+    message: string;
+  } = req.body;
 
-  for (const token of tokens) {
-    res.write(token);
+  // Find or create conversation
+  let conversation = null;
 
-    await new Promise(
-      (resolve) =>
-        setTimeout(
-          resolve,
-          200
-        )
+  if (conversationId) {
+    conversation = await conversationRepository.findById(conversationId);
+  }
+
+  if (!conversation) {
+    conversation = await conversationRepository.create(
+      message.substring(0, 40)
     );
   }
 
-  res.end();
-  req.on("close", () => {
+  // Save user message
+  await messageRepository.create({
+    conversationId: conversation.id,
+    role: "user",
+    content: message,
+  });
+
+  // Load history
+  const messages =
+    await messageRepository.findByConversationId(
+      conversation.id
+    );
+  
+  const history: LLMMessage[] =
+    messages.map((item) => ({
+      role: item.role,
+      content: item.content
+    }));
+
+  const prompt = buildPrompt(
+    "general",
+    history
+  );
+
+  let fullResponse = "";
+
+  req.on("close", () =>{
     console.log("Client disconnected.");
   });
+
+  const timeout = setTimeout(() => {
+    res.end();
+  }, 60_000);
+
+  try {
+    for await (const token of llm.stream(prompt)) {
+      fullResponse +=token;
+      res.write(token);
+    }
   
-  const timeout =
-    setTimeout(() => {
-      res.end();
-    }, 60_000);
-  
-  res.on("close", () => {
+    const formatted = formatResponse(fullResponse);
+
+    logTokenUsage({
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0
+    });
+
+    await messageRepository.create({
+      conversationId: conversation.id,
+      role: "assistant",
+      content: formatted,
+    });
+
+    res.end();
+  } catch (error) {
     clearTimeout(timeout);
-  });
+  }
 }
