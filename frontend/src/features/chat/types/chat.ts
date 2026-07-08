@@ -9,6 +9,10 @@ export type Conversation = {
   title: string;
 };
 
+export type StreamState =
+  | "idle"
+  | "streaming";
+
 export type SendMessageRequest = {
   conversationId: string;
   message: string;

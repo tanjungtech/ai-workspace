@@ -4,7 +4,7 @@ import * as chatService from "../services/chat.service.js";
 
 import { chatSchema } from '../schemas/chat.schema.js';
 
-export async function chat(
+async function chat(
   req: Request,
   res: Response
 ) {
@@ -34,3 +34,15 @@ export async function chat(
     });
   }
 }
+
+async function stream(
+  req: Request,
+  res: Response,
+) {
+  await chatService.stream(req, res);
+}
+
+export {
+  chat,
+  stream,
+};

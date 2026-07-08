@@ -1,65 +1,91 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { sendMessage as sendMessageApi } from "../api/chat.api";
+// import { sendMessage as sendMessageApi } from "../api/chat.api";
+import { streamMessage } from "../api/chat.api";
 
-import type { ChatMessage } from "../types/chat";
+import type {
+  ChatMessage,
+  StreamState
+} from "../types/chat";
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const conversationId = "demo-conversation";
+  const [state, setState] = useState<StreamState>("idle");
 
-  async function sendMessage(content: string) {
-    if (!content.trim()) {
-      return;
-    }
+  const controller = useRef<AbortController>(null);
 
-    const userMessage: ChatMessage = {
+  const conversationId = "demo";
+
+  async function sendMessage(
+    content: string
+  ) {
+    controller.current = new AbortController();
+
+    setState("streaming");
+
+    const userMessage = {
       id: crypto.randomUUID(),
-      role: "user",
+      role: "user" as const,
       content,
     };
 
+    const assistantId = crypto.randomUUID();
+
     setMessages((previous) => [
       ...previous,
+
       userMessage,
+
+      {
+        id: assistantId,
+
+        role: "assistant",
+
+        content: "",
+      },
     ]);
 
-    try {
-      const response = await sendMessageApi({
-        conversationId,
-        message: content,
-      });
+    await streamMessage(
+      conversationId,
+      content,
+      controller.current.signal,
 
-      const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content: response.reply,
-      };
+      (chunk) => {
+        setMessages(
+          (previous) =>
+            previous.map(
+              (message) =>
+                message.id === assistantId ?
+                  {
+                    ...message,
 
-      setMessages((previous) => [
-        ...previous,
-        assistantMessage,
-      ]);
-    } catch (error) {
-      console.error(error);
-      const assistantMessage: ChatMessage = {
-        id: crypto.randomUUID(),
-        role: "assistant",
-        content:
-          "Something went wrong while contacting the AI.",
-      };
+                    content:
+                      message.content + chunk,
+                  }
+                  : message
+            )
+        );
+      }
+    );
 
-      setMessages((previous) => [
-        ...previous,
-        assistantMessage,
-      ]);
-    }
+    setState("idle");
+  }
+
+  function cancelGeneration() {
+    controller.current?.abort();
+
+    setState("idle");
   }
 
   return {
     messages,
-    sendMessage
-  }
+
+    sendMessage,
+
+    cancelGeneration,
+
+    streaming: state === "streaming",
+  };
 
 }

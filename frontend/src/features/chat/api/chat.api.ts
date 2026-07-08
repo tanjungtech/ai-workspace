@@ -1,21 +1,52 @@
-import axios from "axios";
+const API_URL =
+  import.meta.env.VITE_API_URL;
 
-import type {
-  SendMessageRequest,
-  SendMessageResponse,
-} from "../types/chat";
+  export async function streamMessage(
+    conversationId: string,
+    message: string,
+    signal: AbortSignal,
+    onChunk: (chunk: string) => void
+  ) {
+    const response = await fetch(
+      `${API_URL}/chat/stream`,
+      {
+        method: "POST",
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-});
+        signal,
 
-export async function sendMessage(
-  payload: SendMessageRequest
-): Promise<SendMessageResponse> {
-  const { data } = await api.post<SendMessageResponse>(
-    "/chat",
-    payload
-  );
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
 
-  return data;
-}
+        body: JSON.stringify({
+          conversationId,
+          message,
+        }),
+      }
+    );
+
+    const reader =
+      response.body?.getReader();
+
+    if (!reader) {
+      throw new Error(
+        "No stream"
+      );
+    }
+
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const result = await reader.read();
+
+      if (result.done) {
+        break;
+      }
+
+      const chunk = decoder.decode(result.value);
+
+      onChunk(chunk);
+    }
+
+  }

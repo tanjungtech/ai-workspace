@@ -1,3 +1,5 @@
+import type { Request, Response } from 'express';
+
 import * as conversationRepository from "../repositories/conversation.repository.js";
 import * as messageRepository from "../repositories/message.repository.js";
 
@@ -52,7 +54,7 @@ export async function chat({
   const history: LLMMessage[] = messages.map((message) => ({
     role: message.role,
     content: message.content,
-}));
+  }));
 
   // Step 6
   // Ask AI
@@ -78,4 +80,49 @@ export async function chat({
     conversation,
     assistantMessage,
   };
+}
+
+export async function stream(
+  req: Request,
+  res: Response
+) {
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+
+  const tokens = [
+    "Hello ",
+    "this ",
+    "is ",
+    "a ",
+    "streaming ",
+    "response.",
+  ];
+
+  for (const token of tokens) {
+    res.write(token);
+
+    await new Promise(
+      (resolve) =>
+        setTimeout(
+          resolve,
+          200
+        )
+    );
+  }
+
+  res.end();
+  req.on("close", () => {
+    console.log("Client disconnected.");
+  });
+  
+  const timeout =
+    setTimeout(() => {
+      res.end();
+    }, 60_000);
+  
+  res.on("close", () => {
+    clearTimeout(timeout);
+  });
 }

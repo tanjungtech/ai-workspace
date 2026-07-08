@@ -10,7 +10,7 @@ http:
     type: json
     data: |-
       {
-        "prompt": "Explain JWT authentication."
+        "prompt": "Hello AI"
       }
   auth: inherit
 
