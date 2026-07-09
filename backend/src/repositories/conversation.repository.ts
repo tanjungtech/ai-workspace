@@ -1,15 +1,16 @@
 import { pool } from "../config/database.js";
 
 export async function findAll(page: number, limit: number) {
+  const offset = (page - 1) * limit;
   const result = await pool.query(
     `
     SELECT *
     FROM conversations
     ORDER BY updated_at DESC
-    LIMIT $2
-    OFFSET ($1 - 1) * $2
+    LIMIT $1
+    OFFSET $2
     `,
-    [page, limit]
+    [limit, offset]
   );
 
   return result.rows;
@@ -62,6 +63,14 @@ export async function rename(
 }
 
 export async function remove(id: string) {
+  await pool.query(
+    `
+    DELETE FROM messages
+    WHERE conversation_id = $1
+    `,
+    [id]
+  );
+
   await pool.query(
     `
     DELETE FROM conversations

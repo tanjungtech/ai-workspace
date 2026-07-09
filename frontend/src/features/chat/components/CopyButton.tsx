@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
+import Button from "../../../components/ui/Button";
 
 type Props = {
   text: string;
@@ -21,18 +22,11 @@ export default function CopyButton({
         }, 2000);
       }}
     >
-      <button
-        className="
-          rounded
-          bg-gray-700
-          px-3
-          py-1
-          text-sm
-          text-white
-        "
+      <Button
+        variant="primary"
       >
         {copied ? "Copied!" : "Copy"}
-      </button>
+      </Button>
     </CopyToClipboard>
   );
 }

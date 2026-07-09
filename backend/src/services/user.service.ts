@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 
 import * as userRepository from "../repositories/user.repository.js";
+import { HttpError } from "../utils/http-error.js";
 
 type CreateUserInput = {
   name: string;
@@ -22,7 +23,10 @@ export async function getUserById(id: number) {
   const user = await userRepository.findById(id);
 
   if (!user) {
-    throw new Error("User not found");
+    throw new HttpError(
+      404,
+      "User not found"
+    )
   }
 
   return user;
@@ -38,7 +42,10 @@ export async function createUser({
   const existingUser = await userRepository.findByEmail(email);
 
   if (existingUser) {
-    throw new Error("Email already exists");
+    throw new HttpError(
+      404,
+      "Email already exists"
+    )
   }
 
   // Business Rule #2
@@ -61,7 +68,10 @@ export async function updateUser({
   const user = await userRepository.findById(id);
 
   if (!user) {
-    throw new Error("User not found");
+    throw new HttpError(
+      404,
+      "User not found"
+    )
   }
 
   const existingUser = await userRepository.findByEmail(email);
@@ -70,7 +80,10 @@ export async function updateUser({
     existingUser &&
     existingUser.id !== id
   ) {
-    throw new Error("Email already exists");
+    throw new HttpError(
+      404,
+      "Email already exists"
+    )
   }
 
   return userRepository.update(
@@ -84,7 +97,10 @@ export async function deleteUser(id: number) {
   const user = await userRepository.findById(id);
 
   if (!user) {
-    throw new Error("User not found");
+    throw new HttpError(
+      404,
+      "User not found"
+    )
   }
 
   await userRepository.remove(id);

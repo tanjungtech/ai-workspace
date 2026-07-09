@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool } from '../config/database.js';
+import { HttpError } from '../utils/http-error.js';
 
 // const DEMO_USER = {
 //   id: 1,
@@ -22,7 +23,10 @@ export async function login(email: string, password: string) {
   console.log('result', result.rows[0]);
 
   if (email !== result.rows[0].email) {
-    throw new Error('Invalid credentials!');
+    throw new HttpError(
+      404,
+      'Invalid credentials!'
+    );
   }
 
   const validPassword = await bcrypt.compare(
@@ -31,7 +35,10 @@ export async function login(email: string, password: string) {
   );
 
   if (!validPassword) {
-    throw new Error('Invalid credentials');
+    throw new HttpError(
+      404,
+      'Invalid credentials!'
+    );
   }
 
   const token = jwt.sign(
