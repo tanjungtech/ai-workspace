@@ -3,6 +3,8 @@ import type { Request, Response } from 'express';
 import * as conversationRepository from "../repositories/conversation.repository.js";
 import * as messageRepository from "../repositories/message.repository.js";
 
+import * as retrieverService from "./retriever.service.js";
+
 import { generateResponse } from "../llm/chat.js";
 // import { generateResponse } from "../providers/mock.provider.js";
 import { llm } from "../llm/llm.provider.js";
@@ -60,14 +62,27 @@ export async function chat({
     content: message.content,
   }));
 
+  const retrieved =
+    await retrieverService.retrieve(prompt);
+
+  const context =
+    retrieved
+      .map(
+        (chunk) => chunk.content
+      )
+      .join("\n\n");
+
   // Step 6
   // Ask AI
   const setupPromp = buildPrompt(
     "general",
-    history
+    history,
+    context
   );
 
   const answer = await generateResponse(setupPromp);
+
+  const formatted = formatResponse(answer);
 
   // Step 7
   // Save assistant response
@@ -75,7 +90,7 @@ export async function chat({
     await messageRepository.create({
       conversationId: conversation.id,
       role: "assistant",
-      content: answer,
+      content: formatted,
     });
 
   // Step 8
@@ -83,6 +98,14 @@ export async function chat({
   return {
     conversation,
     assistantMessage,
+    sources:
+      retrieved.map(
+        (chunk) => ({
+          id: chunk.document_id,
+          chunkIndex: chunk.chunk_index,
+          preview: chunk.content.substring(0, 150),
+        })
+      )
   };
 }
 
@@ -91,13 +114,8 @@ export async function stream(
   res: Response
 ) {
 
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  const { conversationId, message, }: {
-    conversationId?: string;
-    message: string;
+  const {
+    conversationId,
   } = req.body;
 
   // Find or create conversation
@@ -109,7 +127,7 @@ export async function stream(
 
   if (!conversation) {
     conversation = await conversationRepository.create(
-      message.substring(0, 40)
+      req.body.prompt.substring(0, 40)
     );
   }
 
@@ -117,7 +135,7 @@ export async function stream(
   await messageRepository.create({
     conversationId: conversation.id,
     role: "user",
-    content: message,
+    content: req.body.prompt,
   });
 
   // Load history
@@ -132,43 +150,55 @@ export async function stream(
       content: item.content
     }));
 
-  const prompt = buildPrompt(
-    "general",
-    history
-  );
+  const retrieved =
+    await retrieverService.retrieve(req.body.prompt);
+
+  const context =
+    retrieved
+      .map(
+        (chunk) => chunk.content
+      )
+      .join("\n\n");
+
+  const setupPrompt =
+    buildPrompt(
+      "general",
+      history,
+      context
+    );
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
 
   let fullResponse = "";
 
-  req.on("close", () =>{
-    console.log("Client disconnected.");
+  // req.on("close", () =>{
+  //   console.log("Client disconnected.");
+  // });
+
+  // const timeout = setTimeout(() => {
+  //   res.end();
+  // }, 60_000);
+
+  for await (const token of llm.stream(setupPrompt)) {
+    fullResponse +=token;
+    res.write(token);
+  }
+
+  const formatted = formatResponse(fullResponse);
+
+  logTokenUsage({
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0
   });
 
-  const timeout = setTimeout(() => {
-    res.end();
-  }, 60_000);
+  await messageRepository.create({
+    conversationId: conversation.id,
+    role: "assistant",
+    content: formatted,
+  });
 
-  try {
-    for await (const token of llm.stream(prompt)) {
-      fullResponse +=token;
-      res.write(token);
-    }
-  
-    const formatted = formatResponse(fullResponse);
-
-    logTokenUsage({
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0
-    });
-
-    await messageRepository.create({
-      conversationId: conversation.id,
-      role: "assistant",
-      content: formatted,
-    });
-
-    res.end();
-  } catch (error) {
-    clearTimeout(timeout);
-  }
+  res.end();
 }

@@ -69,3 +69,14 @@ export async function updateEmbedding(
     ]
   );
 }
+
+export async function findAll() {
+  const result =
+    await pool.query(
+      `
+      SELECT * FROM document_chunks
+      `
+    );
+
+  return result.rows;
+}

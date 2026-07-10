@@ -21,3 +21,12 @@ export type SendMessageRequest = {
 export type SendMessageResponse = {
   reply: string;
 };
+
+export type ChatResponse = {
+  answer: string;
+  sources: {
+    id: string;
+    chunkIndex: string;
+    preview: string;
+  }[];
+};
