@@ -2,6 +2,8 @@ import * as documentRepository from "../repositories/document.repository.js";
 import * as chunkRepository from "../repositories/documentChunk.repository.js";
 
 import { createParser } from "../parsers/parser.factory.js";
+import { mockEmbedProvider } from "../providers/mock.embed.provider.js";
+import { findByDocumentId } from "../repositories/documentChunk.repository.js";
 
 type CreateDocumentInput = {
   filename: string;
@@ -45,6 +47,23 @@ export async function create(
       })
     )
   );
+
+  // Set embedding
+  // Modify chunk for embedding
+
+  const savedChunks =
+    await chunkRepository.findByDocumentId(document.id);
+
+  for (const chunk of savedChunks) {
+    const embedding =
+      await mockEmbedProvider.embed(chunk.content);
+
+    await chunkRepository.updateEmbedding({
+      id: chunk.id,
+      embedding,
+    });
+  }
+
   return document;
 }
 

@@ -3,5 +3,6 @@ export type DocumentChunk = {
   documentId: string;
   chunkIndex: number;
   content: string;
+  embedding: number[] | null;
   createdAt: Date;
 };

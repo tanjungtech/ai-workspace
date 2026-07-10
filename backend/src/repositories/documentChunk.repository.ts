@@ -6,6 +6,11 @@ type CreateChunkInput = {
   content: string;
 };
 
+type UpdateEmbeddingInput = {
+  id: string;
+  embedding: number[];
+};
+
 export async function createMany(
   chunks: CreateChunkInput[]
 ) {
@@ -45,5 +50,22 @@ export async function findByDocumentId(
     ORDER BY chunk_index
     `,
     [documentId]
+  );
+  return result.rows;
+}
+
+export async function updateEmbedding(
+  input: UpdateEmbeddingInput
+) {
+  await pool.query(
+    `
+    UPDATE document_chunks
+    SET embedding = $1
+    WHERE id = $2
+    `,
+    [
+      JSON.stringify(input.embedding),
+      input.id,
+    ]
   );
 }

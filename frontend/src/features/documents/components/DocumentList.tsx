@@ -29,6 +29,9 @@ export default function Documentlist({
           </div>
         </div>
       ))}
+      <div className="text-green-600 text-sm">
+        Ready
+      </div>
     </div>
   );
 }

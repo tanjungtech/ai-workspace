@@ -1,6 +1,9 @@
-import { MigrationBuilder } from "node-pg-migrate";
+import { MigrationBuilder, PgLiteral } from "node-pg-migrate";
+import { parseArgs } from "util";
 
 export const up = (pgm: MigrationBuilder) => {
+  pgm.sql("CREATE EXTENSION IF NOT EXISTS vector;");
+
   pgm.createTable("document_chunks", {
     id: {
       type: "uuid",
@@ -18,6 +21,11 @@ export const up = (pgm: MigrationBuilder) => {
     chunk_index: {
       type: "integer",
       notNull: true,
+    },
+
+    embedding: {
+      type: 'vector(1536)',
+      notNull: false,
     },
 
     content: {
