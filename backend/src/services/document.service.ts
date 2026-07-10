@@ -5,6 +5,8 @@ import { createParser } from "../parsers/parser.factory.js";
 import { mockEmbedProvider } from "../providers/mock.embed.provider.js";
 import { findByDocumentId } from "../repositories/documentChunk.repository.js";
 
+import { memoryCache } from "../cache/memory.provider.js";
+
 type CreateDocumentInput = {
   filename: string;
   originalName: string;
@@ -64,6 +66,8 @@ export async function create(
     });
   }
 
+  await memoryCache.clear();
+  
   return document;
 }
 
