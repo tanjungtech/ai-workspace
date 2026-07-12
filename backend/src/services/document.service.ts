@@ -77,16 +77,32 @@ export async function list() {
 
 function splitIntoChunks(
   text: string,
-  chunkSize: number
+  chunkSize = 1000,
+  overlap = 200
 ) {
   const chunks: string[] = [];
 
-  for (
-    let i=0; i < text.length; i+= chunkSize
-  ) {
+  let start = 0;
+
+  while (start < text.length) {
+
+    const end =
+      Math.min(
+        start + chunkSize,
+        text.length
+      );
+
     chunks.push(
-      text.slice(i, i + chunkSize)
+      text.slice(start, end)
     );
+
+    if (
+      end === text.length
+    ) {
+      break;
+    }
+
+    start = end - overlap;
   }
 
   return chunks;

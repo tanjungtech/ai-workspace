@@ -103,6 +103,7 @@ export async function chat({
         (chunk) => ({
           id: chunk.document_id,
           chunkIndex: chunk.chunk_index,
+          similarity: chunk.similarity,
           preview: chunk.content.substring(0, 150),
         })
       )

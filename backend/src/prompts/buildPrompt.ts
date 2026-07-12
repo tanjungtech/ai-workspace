@@ -30,7 +30,7 @@ export function buildPrompt(
     content: SYSTEM_PROMPTS[type],
   });
 
-  if (context.trim().length > 0) {
+  if (context.trim().length) {
     prompt.push({
       role: "system",
       content: `
@@ -38,9 +38,21 @@ export function buildPrompt(
         ${context}
       `,
     });
+  } else {
+    prompt.push({
+      role: "system",
+      content:
+      `
+      No relevant document context was found.
+      Answer only if you are confident.
+      Otherwise reply that
+      the uploaded documents
+      do not contain the answer.
+      `
+    });
   }
 
-  prompt.push(...history);
+  // prompt.push(...history);
 
   return prompt;
 }

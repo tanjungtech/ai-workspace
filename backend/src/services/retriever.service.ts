@@ -5,11 +5,13 @@ import * as chunkRepository from "../repositories/documentChunk.repository.js";
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 
 import { memoryCache } from "../cache/memory.provider.js";
+import type { RetrieveOptions } from "../types/retriever.js";
 
 const TOP_K = 3;
 
 export async function retrieve(
-  question: string
+  question: string,
+  options: RetrieveOptions = {}
 ) {
 
   // Step 1
@@ -39,7 +41,10 @@ export async function retrieve(
 
   // Step 2
   const chunks =
-    await chunkRepository.findAll();
+    options.documentId ?
+      await chunkRepository.findByDocumentId(options.documentId)
+      :
+      await chunkRepository.findAll();
 
   // Step 3
   const ranked =
@@ -55,15 +60,29 @@ export async function retrieve(
       (a, b) => b.similarity - a.similarity
     );
 
-  // Step 4
-  await memoryCache.set(
-    `retrieve:${question}`,
-    ranked.slice(
-      0, TOP_K
-    ),
-    300
-  );
+  const threshold =
+    options.similarityThreshold ?? 0.65;
 
-  // Step 5
-  return ranked.slice(0, TOP_K);
+  const topK =
+    options.topK ?? 3;
+
+  const filtered =
+    ranked.filter(
+      chunk =>
+          chunk.similarity >= threshold
+    );
+
+  return filtered.slice(0, topK);
+
+  // // Step 4
+  // await memoryCache.set(
+  //   `retrieve:${question}`,
+  //   ranked.slice(
+  //     0, TOP_K
+  //   ),
+  //   300
+  // );
+
+  // // Step 5
+  // return ranked.slice(0, TOP_K);
 }
