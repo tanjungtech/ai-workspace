@@ -20,11 +20,12 @@ export default function ChatWindow({
 }: Props) {
   return (
     <div className="flex overflow-y-auto p-6 space-y-6">
-      {messages.map((message) => (
+      {messages.map((m) => (
         <ChatMessage
-          key-={message.id}
-          role={message.role}
-          content={message.content}
+          key-={m.id}
+          // role={message.role}
+          // content={message.content}
+          message={m}
         />
       ))}
     </div>

@@ -1,7 +1,8 @@
 import ConversationSidebar from "../../features/chat/components/ConversationSidebar";
 import ChatInput from "../../features/chat/components/ChatInput";
+import ChatMessage from "../../features/chat/components/ChatMessage";
 
-import ChatWindow from "../../features/chat/components/ChatWindow";
+// import ChatWindow from "../../features/chat/components/ChatWindow";
 import { useChat } from "../../features/chat/hooks/useChat";
 
 export default function Chat() {
@@ -34,9 +35,17 @@ export default function Chat() {
         space-y-4
         overflow-y-auto
       ">
-        <ChatWindow
+        {/* <ChatWindow
           messages={messages}
-        />
+        /> */}
+        {
+          messages.map(message => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+            />
+          ))
+        }
         
         <ChatInput
           loading={loading}
