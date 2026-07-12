@@ -14,6 +14,7 @@ import type { ChatMessage, } from "../types/chat";
 // };
 
 import SourceList from "./SourceList";
+import AgentStatus from "../../../components/AgentStatus";
 
 type Props = {
   message: ChatMessage;
@@ -36,6 +37,7 @@ export default function ChatMessage({
         border
         p-4
       ">
+        <AgentStatus />
         <Markdown>{message.content}</Markdown>
         {
           message.role ===
