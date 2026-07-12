@@ -1,91 +1,147 @@
 import type { Request, Response } from 'express';
 
-import * as conversationRepository from "../repositories/conversation.repository.js";
+// import * as conversationRepository from "../repositories/conversation.repository.js";
 import * as messageRepository from "../repositories/message.repository.js";
 
-import * as retrieverService from "./retriever.service.js";
+// import * as retrieverService from "./retriever.service.js";
 
 import { generateResponse } from "../llm/chat.js";
 // import { generateResponse } from "../providers/mock.provider.js";
 import { llm } from "../llm/llm.provider.js";
 
-import type { LLMMessage } from "../llm/types.js";
+// import type { LLMMessage } from "../llm/types.js";
 import { buildPrompt } from "../prompts/buildPrompt.js";
 import { formatResponse } from '../prompts/response.format.js';
 
 import { logTokenUsage } from '../utils/token.logger.js';
+import { prepareChatContext } from './chatContext.service.js';
 
 type ChatInput = {
   conversationId?: string;
   prompt: string;
 };
 
+// export async function chat({
+//   conversationId,
+//   prompt
+// }: ChatInput) {
+
+//   // Step 1
+//   // Find existing conversation
+//   let conversation = null;
+
+//   if (conversationId) {
+//     conversation = await conversationRepository.findById(conversationId);
+//   }
+
+//   // Step 2
+//   // If conversation doesn't exist, create one
+//   if (!conversation) {
+//     conversation =
+//       await conversationRepository.create(
+//         prompt.substring(0, 40)
+//       );
+//   }
+
+//   // Step 3
+//   // Save user message
+//   await messageRepository.create({
+//     conversationId: conversation.id,
+//     role: "user",
+//     content: prompt,
+//   });
+
+//   // Step 4
+//   // Load all messages
+//   const messages =
+//     await messageRepository.findByConversationId(conversation.id);
+
+//   // Step 5
+//   // Convert database rows into OpenAI format
+//   const history: LLMMessage[] = messages.map((message) => ({
+//     role: message.role,
+//     content: message.content,
+//   }));
+
+//   const retrieved =
+//     await retrieverService.retrieve(prompt);
+
+//   const context =
+//     retrieved
+//       .map(
+//         (chunk) => chunk.content
+//       )
+//       .join("\n\n");
+
+//   // Step 6
+//   // Ask AI
+//   const setupPrompt = buildPrompt(
+//     "general",
+//     history,
+//     context
+//   );
+
+//   const answer = await generateResponse(setupPrompt);
+
+//   const formatted = formatResponse(answer);
+
+//   // Step 7
+//   // Save assistant response
+//   const assistantMessage =
+//     await messageRepository.create({
+//       conversationId: conversation.id,
+//       role: "assistant",
+//       content: formatted,
+//     });
+
+//   // Step 8
+//   // Return response
+//   return {
+//     conversation,
+//     assistantMessage,
+//     sources:
+//       retrieved.map(
+//         (chunk) => ({
+//           documentId: chunk.document_id,
+//           documentname: chunk.document_name,
+//           chunkIndex: chunk.chunk_index,
+//           similarity: chunk.similarity,
+//           preview: chunk.content.substring(0, 150),
+//         })
+//       )
+//   };
+// }
+
 export async function chat({
   conversationId,
   prompt
 }: ChatInput) {
-
-  // Step 1
-  // Find existing conversation
-  let conversation = null;
-
-  if (conversationId) {
-    conversation = await conversationRepository.findById(conversationId);
-  }
-
-  // Step 2
-  // If conversation doesn't exist, create one
-  if (!conversation) {
-    conversation =
-      await conversationRepository.create(
-        prompt.substring(0, 40)
-      );
-  }
-
-  // Step 3
-  // Save user message
-  await messageRepository.create({
-    conversationId: conversation.id,
-    role: "user",
-    content: prompt,
-  });
-
-  // Step 4
-  // Load all messages
-  const messages =
-    await messageRepository.findByConversationId(conversation.id);
-
-  // Step 5
-  // Convert database rows into OpenAI format
-  const history: LLMMessage[] = messages.map((message) => ({
-    role: message.role,
-    content: message.content,
-  }));
-
-  const retrieved =
-    await retrieverService.retrieve(prompt);
-
-  const context =
-    retrieved
-      .map(
-        (chunk) => chunk.content
-      )
-      .join("\n\n");
-
-  // Step 6
-  // Ask AI
-  const setupPrompt = buildPrompt(
-    "general",
+  // Shared Preparation
+  const {
+    conversation,
     history,
-    context
+    retrieved,
+    context,
+  } = await prepareChatContext (
+    conversationId,
+    prompt
   );
 
-  const answer = await generateResponse(setupPrompt);
+  // Build Prompt
+  const setupPrompt =
+    buildPrompt(
+      "general",
+      history,
+      context
+    );
+
+  // Generate Response
+  const answer =
+    await generateResponse(setupPrompt);
 
   const formatted = formatResponse(answer);
 
-  // Step 7
-  // Save assistant response
+  //Save Assistant Message
   const assistantMessage =
     await messageRepository.create({
       conversationId: conversation.id,
@@ -93,22 +149,20 @@ export async function chat({
       content: formatted,
     });
 
-  // Step 8
-  // Return response
+  // Return
   return {
     conversation,
     assistantMessage,
     sources:
-      retrieved.map(
-        (chunk) => ({
-          documentId: chunk.document_id,
-          documentname: chunk.document_name,
-          chunkIndex: chunk.chunk_index,
-          similarity: chunk.similarity,
-          preview: chunk.content.substring(0, 150),
-        })
-      )
+      retrieved.map(chunk => ({
+        documentId: chunk.document_id,
+        documentName: chunk.document_name,
+        chunkIndex: chunk.chunk_index,
+        similarity: chunk.similarity,
+        preview: chunk.content.substring(0, 150),
+      })),
   };
+
 }
 
 export async function stream(
@@ -116,53 +170,17 @@ export async function stream(
   res: Response
 ) {
 
+  // Shared Preparation
+
   const {
-    conversationId,
-  } = req.body;
-
-  // Find or create conversation
-  let conversation = null;
-
-  if (conversationId) {
-    conversation = await conversationRepository.findById(conversationId);
-  }
-
-  if (!conversation) {
-    conversation = await conversationRepository.create(
-      req.body.prompt.substring(0, 40)
-    );
-  }
-
-  // Save user message
-  await messageRepository.create({
-    conversationId: conversation.id,
-    role: "user",
-    content: req.body.prompt,
-  });
-
-  // Load history
-  const messages =
-    await messageRepository.findByConversationId(
-      conversation.id
-    );
-  
-  const history: LLMMessage[] =
-    messages.map((item) => ({
-      role: item.role,
-      content: item.content
-    }));
-
-  const retrieved =
-    await retrieverService.retrieve(req.body.prompt);
-
-  const context =
-    retrieved
-      .map(
-        (chunk, index) =>
-          `[Source ${index+1}]
-          ${chunk.content}`
-      )
-      .join("\n\n");
+    conversation,
+    history,
+    retrieved,
+    context,
+  } = await prepareChatContext(
+    req.body.conversationId,
+    req.body.prompt
+  );
 
   const setupPrompt =
     buildPrompt(
@@ -171,32 +189,24 @@ export async function stream(
       context
     );
 
+  // SSE Headers
+
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  // Stream
+
   let fullResponse = "";
-
-  // req.on("close", () =>{
-  //   console.log("Client disconnected.");
-  // });
-
-  // const timeout = setTimeout(() => {
-  //   res.end();
-  // }, 60_000);
 
   for await (const token of llm.stream(setupPrompt)) {
     fullResponse +=token;
     res.write(token);
   }
 
-  const formatted = formatResponse(fullResponse);
+  // Save Assistant Message
 
-  logTokenUsage({
-    promptTokens: 0,
-    completionTokens: 0,
-    totalTokens: 0
-  });
+  const formatted = formatResponse(fullResponse);
 
   await messageRepository.create({
     conversationId: conversation.id,
@@ -204,5 +214,12 @@ export async function stream(
     content: formatted,
   });
 
+  logTokenUsage({
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0
+  });
+
+  // Finish
   res.end();
 }

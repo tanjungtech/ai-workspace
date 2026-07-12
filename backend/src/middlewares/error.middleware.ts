@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 
 import { HttpError } from "../utils/http-error.js";
+import { logError } from "../utils/logger.js";
 
 export function errorMiddleware(
   err: Error,
@@ -14,7 +15,7 @@ export function errorMiddleware(
     });
   }
 
-  console.error(err);
+  logError("Internal Server Error" ,err);
 
   res.status(500).json({
     message: "Internal Server Error",

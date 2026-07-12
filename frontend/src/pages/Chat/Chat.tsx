@@ -4,6 +4,7 @@ import ChatMessage from "../../features/chat/components/ChatMessage";
 
 // import ChatWindow from "../../features/chat/components/ChatWindow";
 import { useChat } from "../../features/chat/hooks/useChat";
+import { useAutoScroll } from "../../hooks/useAutoScroll";
 
 export default function Chat() {
   const {
@@ -11,6 +12,8 @@ export default function Chat() {
     loading,
     sendMessage,
   } = useChat();
+
+  const bottomRef = useAutoScroll(messages);
 
   return (
     <div className="
@@ -46,6 +49,8 @@ export default function Chat() {
             />
           ))
         }
+
+        <div ref={bottomRef} />
         
         <ChatInput
           loading={loading}

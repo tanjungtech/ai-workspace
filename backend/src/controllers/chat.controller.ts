@@ -4,6 +4,8 @@ import * as chatService from "../services/chat.service.js";
 
 import { chatSchema } from '../schemas/chat.schema.js';
 
+import { logError } from '../utils/logger.js';
+
 async function chat(
   req: Request,
   res: Response
@@ -26,7 +28,7 @@ async function chat(
       message: result.assistantMessage
     });
   } catch (error) {
-    console.error(error);
+    logError("Chat controller error" ,error);
 
     return res.status(500).json({
       success: false,

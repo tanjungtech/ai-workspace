@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { pool } from '../config/database.js';
 import { HttpError } from '../utils/http-error.js';
+import { logInfo } from '../utils/logger.js';
 
 // const DEMO_USER = {
 //   id: 1,
@@ -20,7 +21,7 @@ export async function login(email: string, password: string) {
     [email]
   );
 
-  console.log('result', result.rows[0]);
+  logInfo('result', result.rows[0]);
 
   if (email !== result.rows[0].email) {
     throw new HttpError(

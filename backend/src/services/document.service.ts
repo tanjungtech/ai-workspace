@@ -6,6 +6,7 @@ import { mockEmbedProvider } from "../providers/mock.embed.provider.js";
 import { findByDocumentId } from "../repositories/documentChunk.repository.js";
 
 import { memoryCache } from "../cache/memory.provider.js";
+import { RAG_CONFIG } from "../config/rag.config.js";
 
 type CreateDocumentInput = {
   filename: string;
@@ -77,8 +78,8 @@ export async function list() {
 
 function splitIntoChunks(
   text: string,
-  chunkSize = 1000,
-  overlap = 200
+  chunkSize = RAG_CONFIG.chunkSize,
+  overlap = RAG_CONFIG.chunkOverlap
 ) {
   const chunks: string[] = [];
 

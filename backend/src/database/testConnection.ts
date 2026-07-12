@@ -1,11 +1,12 @@
 import { pool } from '../config/database.js';
+import { logError, logInfo } from '../utils/logger.js';
 
 export async function testDatabaseConnection() {
   try {
     await pool.query('SELECT NOW()');
 
-    console.log('PostgreSQL connected');
+    logInfo('PostgreSQL connected');
   } catch (error) {
-    console.error(error);
+    logError('DB connection failed', error);
   }
 }

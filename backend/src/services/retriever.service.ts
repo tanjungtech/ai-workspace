@@ -6,6 +6,7 @@ import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 
 import { memoryCache } from "../cache/memory.provider.js";
 import type { RetrieveOptions } from "../types/retriever.js";
+import { RAG_CONFIG } from "../config/rag.config.js";
 
 // const TOP_K = 3;
 
@@ -36,7 +37,7 @@ export async function retrieve(
     await memoryCache.set(
       embeddingKey,
       queryEmbedding,
-      3600
+      RAG_CONFIG.embeddingCacheTTL
     );
   }
 
@@ -69,7 +70,7 @@ export async function retrieve(
   // Apply Threshold
 
   const threshold =
-    options.similarityThreshold ?? 0.65;
+    options.similarityThreshold ?? RAG_CONFIG.similarityThreshold;
 
   const filtered =
     ranked.filter(
@@ -81,7 +82,7 @@ export async function retrieve(
   // Top K
 
   const topK =
-    options.topK ?? 3;
+    options.topK ?? RAG_CONFIG.topK;
 
   return filtered.slice(0, topK);
 
