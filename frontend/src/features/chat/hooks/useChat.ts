@@ -1,91 +1,143 @@
-import { useRef, useState } from "react";
+// import { useRef, useState } from "react";
+import { useState } from "react";
 
 // import { sendMessage as sendMessageApi } from "../api/chat.api";
-import { streamMessage } from "../api/chat.api";
+// import { streamMessage } from "../api/chat.api";
 
 import type {
   ChatMessage,
-  StreamState
+  // StreamState,
+  // Source,
 } from "../types/chat";
+
+type SendMessageInput = {
+  prompt: string;
+};
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const [state, setState] = useState<StreamState>("idle");
+  const [loading, setLoading] = useState(false);
 
-  const controller = useRef<AbortController>(null);
+  const [conversationId, setConversationId] = useState<string>();
 
-  const conversationId = "demo";
+  // const [state, setState] = useState<StreamState>("idle");
 
-  async function sendMessage(
-    content: string
-  ) {
-    controller.current = new AbortController();
+  // const controller = useRef<AbortController>(null);
 
-    setState("streaming");
+  async function sendMessage({
+    prompt,
+  }: SendMessageInput) {
+    setLoading(true);
 
-    const userMessage = {
+    // Add User Message
+    const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
-      role: "user" as const,
-      content,
+      role: "user",
+      content: prompt,
     };
 
-    const assistantId = crypto.randomUUID();
-
-    setMessages((previous) => [
-      ...previous,
-
+    setMessages(prev => [
+      ...prev,
       userMessage,
+    ]);
 
+    // Placeholder assistant
+    const assistantId =
+      crypto.randomUUID();
+
+    setMessages(prev => [
+      ...prev,
       {
         id: assistantId,
-
         role: "assistant",
-
         content: "",
+        sources: [],
       },
     ]);
 
-    await streamMessage(
-      conversationId,
-      content,
-      controller.current.signal,
+    // Stream Request
+    const response =
+      await fetch(
+        "/api/chat/stream",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversationId,
+            prompt,
+          }),
+        }
+      );
 
-      (chunk) => {
-        setMessages(
-          (previous) =>
-            previous.map(
-              (message) =>
-                message.id === assistantId ?
-                  {
-                    ...message,
+    if (!response.body) {
+      setLoading(false);
+      return;
+    }
 
-                    content:
-                      message.content + chunk,
-                  }
-                  : message
-            )
-        );
+    const reader = response.body.getReader();
+
+    const decoder = new TextDecoder();
+
+    let fullResponse = "";
+    
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        break;
       }
+
+      const token = decoder.decode(value);
+      fullResponse += token;
+
+      setMessages(prev => 
+        prev.map(message => 
+          message.id === assistantId
+            ? {
+              ...message,
+              content: fullResponse,
+            }
+            : message
+        )
+      );
+    }
+
+    // Optional metadata request
+    const metadata =
+      await fetch(
+        "api/chat/latest",
+        { method: "GET" },
+      ).then(r => r.json());
+
+    setConversationId(metadata.conversation.id);
+    setMessages(prev => 
+      prev.map(message =>
+        message.id === assistantId
+          ? {
+            ...message,
+            sources: metadata.sources,
+          }
+          : message
+      )
     );
 
-    setState("idle");
+    setLoading(false);
   }
 
-  function cancelGeneration() {
-    controller.current?.abort();
+  // function cancelGeneration() {
+  //   controller.current?.abort();
 
-    setState("idle");
-  }
+  //   setState("idle");
+  // }
 
   return {
     messages,
-
+    loading,
     sendMessage,
-
-    cancelGeneration,
-
-    streaming: state === "streaming",
+    // cancelGeneration,
   };
 
 }

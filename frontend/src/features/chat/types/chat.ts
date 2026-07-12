@@ -2,6 +2,7 @@ export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
 };
 
 export type Conversation = {
@@ -22,11 +23,15 @@ export type SendMessageResponse = {
   reply: string;
 };
 
+export type Source = {
+  documentId: string;
+  documentName: string;
+  chunkIndex: number;
+  similarity: number;
+  preview: string;
+};
+
 export type ChatResponse = {
   answer: string;
-  sources: {
-    id: string;
-    chunkIndex: string;
-    preview: string;
-  }[];
+  sources: Source[];
 };

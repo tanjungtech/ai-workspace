@@ -1,38 +1,49 @@
 // import type { Message } from "../types/message";
-import MarkdownMessage from "./MarkdownMessage";
+// import MarkdownMessage from "./MarkdownMessage";
 
 // type ChatMessageProps = {
 //   message: Message;
 // };
 
+import Markdown from "react-markdown";
+import type { ChatMessage, } from "../types/chat";
+
+// type Props = {
+//   role: "user" | "assistant";
+//   content: string;
+// };
+
+import SourceList from "./SourceList";
+
 type Props = {
-  role: "user" | "assistant";
-  content: string;
-};
+  message: ChatMessage;
+}
 
 export default function ChatMessage({
-  role,
-  content,
+  message,
 }: Props) {
-  const isUser = role === "user";
+  // const isUser = role === "user";
 
   return (
-    <div
-      className={`flex ${
-        isUser
-          ? "justify-end" : "justify-start"
-      }`}
-    >
-      <div
-        className={`max-w-4xl rounded-xl px-5 py-4 shadow ${
-          isUser
-            ? "bg-blue-600 text-white" : "bg-white"
-        }`}
-      >
-        <MarkdownMessage
-          content={content}
-        />
+    <div className={
+      message.role === "user" ?
+        "flex justify-end"
+        : "flex justify-start"
+    }>
+      <div className="
+        max-w-3xl
+        rounded-lg
+        border
+        p-4
+      ">
+        <Markdown>{message.content}</Markdown>
+        {
+          message.role ===
+          "assistant" && (
+            <SourceList sources={message.sources}/>
+          )
+        }
       </div>
     </div>
-  )
+  );
 }

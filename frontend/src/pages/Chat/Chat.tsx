@@ -7,15 +7,18 @@ import { useChat } from "../../features/chat/hooks/useChat";
 export default function Chat() {
   const {
     messages,
+    loading,
     sendMessage,
   } = useChat();
 
   return (
     <div className="
+      mx-auto
       flex
       h-screen
+      max-w-5xl
       flex-col
-      md:flex-row
+      p-6
       "
     >
       <div className="
@@ -26,13 +29,20 @@ export default function Chat() {
       >
         <ConversationSidebar />
       </div>
-      <main className="flex-1 overflow-hidden">
+      <main className="
+        flex-1
+        space-y-4
+        overflow-y-auto
+      ">
         <ChatWindow
           messages={messages}
         />
         
         <ChatInput
-          onSend={sendMessage}
+          loading={loading}
+          onSend={prompt =>
+            sendMessage({prompt})
+          }
         />
       </main>
     </div>

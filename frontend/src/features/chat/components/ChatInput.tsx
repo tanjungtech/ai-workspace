@@ -1,40 +1,60 @@
 import { useState } from "react";
 
-type ChatInputProps = {
-  onSend: (prompt: string) => void;
+// type ChatInputProps = {
+//   onSend: (prompt: string) => void;
+// };
+
+type Props = {
+  onSend(prompt: string): Promise<void>;
+  loading: boolean;
 };
 
 export default function ChatInput({
   onSend,
-}: ChatInputProps) {
-  const [prompt, setPrompt] = useState("");
+  loading
+}: Props) {
+  // const [prompt, setPrompt] = useState("");
 
-  function handleSubmit() {
-    const value = prompt.trim();
+  const [value, setValue] = useState("");
 
-    if (!value) return;
+  async function handleSubmit(
+    e: React.SubmitEvent<HTMLFormElement>
+  ) {
+    e.preventDefault();
+    if (!value.trim()) {
+      return;
+    }
 
-    onSend(value);
-
-    setPrompt("");
+    await onSend(value);
+    setValue("");
   }
 
   return (
-    <div className="border-t bg-white p-4">
-      <textarea
-        value={prompt}
-        onChange={(event) =>
-          setPrompt(event.target.value)
-        }
-        className="w-full rounded-lg border p-3"
-        rows={4}
+    <form
+      onSubmit={handleSubmit}
+      className="flex gap-2"
+    >
+      <input
+        className="
+          flex-1
+          rounded-md
+          border
+          p-3
+        "
+        value={value}
+        onChange={e => setValue(e.target.value)}
       />
       <button
-        onClick={handleSubmit}
-        className="mt-3 rounded-lg bg-blue-600 px-5 py-2 text-white"
+        disabled={loading}
+        className="
+          rounded-md
+          bg-blue-600
+          px-4
+          text-white
+        "
       >
         Send
       </button>
-    </div>
-  )
+    </form>
+  );
 }
