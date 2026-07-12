@@ -96,9 +96,7 @@ function splitIntoChunks(
       text.slice(start, end)
     );
 
-    if (
-      end === text.length
-    ) {
+    if (end >= text.length) {
       break;
     }
 

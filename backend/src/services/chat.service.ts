@@ -74,13 +74,13 @@ export async function chat({
 
   // Step 6
   // Ask AI
-  const setupPromp = buildPrompt(
+  const setupPrompt = buildPrompt(
     "general",
     history,
     context
   );
 
-  const answer = await generateResponse(setupPromp);
+  const answer = await generateResponse(setupPrompt);
 
   const formatted = formatResponse(answer);
 
@@ -101,7 +101,8 @@ export async function chat({
     sources:
       retrieved.map(
         (chunk) => ({
-          id: chunk.document_id,
+          documentId: chunk.document_id,
+          documentname: chunk.document_name,
           chunkIndex: chunk.chunk_index,
           similarity: chunk.similarity,
           preview: chunk.content.substring(0, 150),
@@ -157,7 +158,9 @@ export async function stream(
   const context =
     retrieved
       .map(
-        (chunk) => chunk.content
+        (chunk, index) =>
+          `[Source ${index+1}]
+          ${chunk.content}`
       )
       .join("\n\n");
 

@@ -44,8 +44,12 @@ export async function findByDocumentId(
 ) {
   const result = await pool.query(
     `
-    SELECT *
-    FROM document_chunks
+    SELECT
+      dc.*,
+      d.title AS document_name
+    FROM document_chunks dc
+    JOIN documents d
+      ON d.id = dc.document_id
     WHERE document_id = $1
     ORDER BY chunk_index
     `,

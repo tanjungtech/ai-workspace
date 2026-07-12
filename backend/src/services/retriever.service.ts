@@ -7,7 +7,7 @@ import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 import { memoryCache } from "../cache/memory.provider.js";
 import type { RetrieveOptions } from "../types/retriever.js";
 
-const TOP_K = 3;
+// const TOP_K = 3;
 
 export async function retrieve(
   question: string,
@@ -15,6 +15,7 @@ export async function retrieve(
 ) {
 
   // Step 1
+  // Embedding Cache
 
   const embeddingKey =
     `embedding:${question}`;
@@ -40,6 +41,8 @@ export async function retrieve(
   }
 
   // Step 2
+  // Load Chunks
+
   const chunks =
     options.documentId ?
       await chunkRepository.findByDocumentId(options.documentId)
@@ -47,6 +50,8 @@ export async function retrieve(
       await chunkRepository.findAll();
 
   // Step 3
+  // Rank by Similarity
+
   const ranked =
     chunks.map(chunk => ({
       ...chunk,
@@ -60,17 +65,23 @@ export async function retrieve(
       (a, b) => b.similarity - a.similarity
     );
 
+  // Step 4
+  // Apply Threshold
+
   const threshold =
     options.similarityThreshold ?? 0.65;
-
-  const topK =
-    options.topK ?? 3;
 
   const filtered =
     ranked.filter(
       chunk =>
           chunk.similarity >= threshold
     );
+
+  // Step 5
+  // Top K
+
+  const topK =
+    options.topK ?? 3;
 
   return filtered.slice(0, topK);
 
