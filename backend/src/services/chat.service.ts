@@ -21,97 +21,6 @@ type ChatInput = {
   prompt: string;
 };
 
-// export async function chat({
-//   conversationId,
-//   prompt
-// }: ChatInput) {
-
-//   // Step 1
-//   // Find existing conversation
-//   let conversation = null;
-
-//   if (conversationId) {
-//     conversation = await conversationRepository.findById(conversationId);
-//   }
-
-//   // Step 2
-//   // If conversation doesn't exist, create one
-//   if (!conversation) {
-//     conversation =
-//       await conversationRepository.create(
-//         prompt.substring(0, 40)
-//       );
-//   }
-
-//   // Step 3
-//   // Save user message
-//   await messageRepository.create({
-//     conversationId: conversation.id,
-//     role: "user",
-//     content: prompt,
-//   });
-
-//   // Step 4
-//   // Load all messages
-//   const messages =
-//     await messageRepository.findByConversationId(conversation.id);
-
-//   // Step 5
-//   // Convert database rows into OpenAI format
-//   const history: LLMMessage[] = messages.map((message) => ({
-//     role: message.role,
-//     content: message.content,
-//   }));
-
-//   const retrieved =
-//     await retrieverService.retrieve(prompt);
-
-//   const context =
-//     retrieved
-//       .map(
-//         (chunk) => chunk.content
-//       )
-//       .join("\n\n");
-
-//   // Step 6
-//   // Ask AI
-//   const setupPrompt = buildPrompt(
-//     "general",
-//     history,
-//     context
-//   );
-
-//   const answer = await generateResponse(setupPrompt);
-
-//   const formatted = formatResponse(answer);
-
-//   // Step 7
-//   // Save assistant response
-//   const assistantMessage =
-//     await messageRepository.create({
-//       conversationId: conversation.id,
-//       role: "assistant",
-//       content: formatted,
-//     });
-
-//   // Step 8
-//   // Return response
-//   return {
-//     conversation,
-//     assistantMessage,
-//     sources:
-//       retrieved.map(
-//         (chunk) => ({
-//           documentId: chunk.document_id,
-//           documentname: chunk.document_name,
-//           chunkIndex: chunk.chunk_index,
-//           similarity: chunk.similarity,
-//           preview: chunk.content.substring(0, 150),
-//         })
-//       )
-//   };
-// }
-
 export async function chat({
   conversationId,
   prompt
@@ -120,8 +29,7 @@ export async function chat({
   const {
     conversation,
     history,
-    retrieved,
-    context,
+    retrieved
   } = await prepareChatContext (
     conversationId,
     prompt
@@ -132,7 +40,7 @@ export async function chat({
     buildPrompt(
       "general",
       history,
-      context
+      // context
     );
 
   // Generate Response
@@ -221,5 +129,13 @@ export async function stream(
   });
 
   // Finish
+  res.write(
+    "event: done\n"
+  );
+
+  res.write(
+    "data: complete\n\n"
+  );
+
   res.end();
 }

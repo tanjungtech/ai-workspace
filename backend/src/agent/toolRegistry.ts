@@ -1,4 +1,4 @@
-import { retrieve } from "../services/retriever.service.js";
+// import { retrieve } from "../services/retriever.service.js";
 import type {
   Tool,
 } from "./tool.js";
@@ -7,22 +7,39 @@ import {
   retrieveTool,
 } from "./tools/retrieve.tool.js";
 
-const tools =
-  new Map<string, Tool>();
+const registry = new Map<string, Tool>();
 
-tools.set(
+registry.set(
   retrieveTool.name,
   retrieveTool
 );
 
+export function registerTool(
+  tool: Tool
+) {
+  registry.set(
+    tool.name,
+    tool
+  );
+  // return tools.get(name);
+}
+
 export function getTool(
   name: string
 ) {
-  return tools.get(name);
+  return registry.get(name);
 }
 
 export function listTools() {
   return Array.from(
-    tools.values()
+    registry.values()
+  );
+}
+
+export function listToolDescriptions() {
+  return listTools().map(
+    tool =>
+      `${tool.name}
+      ${tool.description}`
   );
 }

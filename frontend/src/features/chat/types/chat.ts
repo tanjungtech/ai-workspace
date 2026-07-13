@@ -1,8 +1,10 @@
 export type ChatMessage = {
+  status: string;
   id: string;
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  statusHistory?: string[];
 };
 
 export type Conversation = {

@@ -9,7 +9,17 @@ export type Source = {
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
+  status?: string;
   content: string;
   sources?: Source[];
-  status?: string;
+  statusHistory?: string[];
+};
+
+export type ChatResponse = {
+  conversation: {
+    id: string;
+    title: string;
+  };
+  assistantMessage: ChatMessage;
+  sources: Source[];
 };

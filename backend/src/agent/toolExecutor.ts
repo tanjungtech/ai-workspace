@@ -2,9 +2,11 @@ import {
   getTool,
 } from "./toolRegistry.js";
 
+import type { AgentState, } from "./state.js";
+
 export async function executeTool(
   toolName: string,
-  input: string
+  state: AgentState
 ) {
   const tool = getTool(toolName);
 
@@ -14,5 +16,24 @@ export async function executeTool(
     );
   }
 
-  return tool.execute(input);
+  state.statusHistory.push(
+    `Executing ${tool.name}`
+  );
+
+  const result =
+    await tool.execute(state.prompt);
+
+  state.toolHistory.push({
+    tool: tool.name,
+    input: state.prompt,
+    output: result.output,
+  });
+
+  state.context = result.output;
+
+  state.statusHistory.push(
+    `${tool.name} completed`
+  );
+
+  return tool.execute(state.prompt);
 }
