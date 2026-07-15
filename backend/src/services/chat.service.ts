@@ -9,12 +9,15 @@ import { generateResponse } from "../llm/chat.js";
 // import { generateResponse } from "../providers/mock.provider.js";
 import { llm } from "../llm/llm.provider.js";
 
-// import type { LLMMessage } from "../llm/types.js";
+import type { LLMMessage } from "../llm/types.js";
 import { buildPrompt } from "../prompts/buildPrompt.js";
 import { formatResponse } from '../prompts/response.format.js';
 
 import { logTokenUsage } from '../utils/token.logger.js';
 import { prepareChatContext } from './chatContext.service.js';
+
+import { runAgent } from "../agent/index.js";
+import { format } from 'path';
 
 type ChatInput = {
   conversationId?: string;
@@ -29,46 +32,36 @@ export async function chat({
   const {
     conversation,
     history,
-    retrieved
+    // retrieved
   } = await prepareChatContext (
     conversationId,
     prompt
   );
 
-  // Build Prompt
-  const setupPrompt =
-    buildPrompt(
-      "general",
-      history,
-      // context
-    );
+  // Run Agent
+  const result = await runAgent({
+    prompt,
+    history,
+  });
 
-  // Generate Response
-  const answer =
-    await generateResponse(setupPrompt);
+  // Format
+  const formatted = formatResponse(result.answer);
 
-  const formatted = formatResponse(answer);
-
-  //Save Assistant Message
+  // Save Assistant
   const assistantMessage =
     await messageRepository.create({
       conversationId: conversation.id,
       role: "assistant",
       content: formatted,
     });
-
-  // Return
+  
+  // Response
   return {
     conversation,
     assistantMessage,
-    sources:
-      retrieved.map(chunk => ({
-        documentId: chunk.document_id,
-        documentName: chunk.document_name,
-        chunkIndex: chunk.chunk_index,
-        similarity: chunk.similarity,
-        preview: chunk.content.substring(0, 150),
-      })),
+    sources: result.sources,
+    toolHistory: result.toolHistory,
+    statusHistory: result.statusHistory,
   };
 
 }
@@ -78,24 +71,23 @@ export async function stream(
   res: Response
 ) {
 
-  // Shared Preparation
+  // Prepare Conversation
 
   const {
     conversation,
     history,
-    retrieved,
-    context,
+    // retrieved,
+    // context,
   } = await prepareChatContext(
     req.body.conversationId,
     req.body.prompt
   );
 
-  const setupPrompt =
-    buildPrompt(
-      "general",
-      history,
-      context
-    );
+  // Run Agent
+  const result = await runAgent({
+    prompt: req.body.prompt,
+    history,
+  });
 
   // SSE Headers
 
@@ -103,13 +95,37 @@ export async function stream(
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  // Stream Status
+  for (
+    const status
+    of result.statusHistory
+  ) {
+    res.write(`event: status\n`);
+    res.write(`data: ${status}\n\n`);
+  }
+
   // Stream
 
   let fullResponse = "";
 
-  for await (const token of llm.stream(setupPrompt)) {
-    fullResponse +=token;
-    res.write(token);
+  const prompt: LLMMessage[] = [
+    {
+      role: "assistant",
+      content: result.answer,
+    },
+  ];
+
+  // const setupPrompt =
+  //   buildPrompt(
+  //     "general",
+  //     history,
+  //     // context
+  //   );
+
+  for await (const token of llm.stream(prompt)) {
+    fullResponse += token;
+    res.write(`event: token\n`);
+    res.write(`data: ${token}\n\n`);
   }
 
   // Save Assistant Message
@@ -122,6 +138,7 @@ export async function stream(
     content: formatted,
   });
 
+  // Token Usage
   logTokenUsage({
     promptTokens: 0,
     completionTokens: 0,

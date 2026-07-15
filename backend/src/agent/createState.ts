@@ -9,6 +9,7 @@ export function createState(
     prompt,
     history,
     context: "",
+    sources: [],
     toolHistory: [],
     statusHistory: [
       "Agent initialized",

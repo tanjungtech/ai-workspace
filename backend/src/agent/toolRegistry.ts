@@ -38,8 +38,8 @@ export function listTools() {
 
 export function listToolDescriptions() {
   return listTools().map(
-    tool =>
-      `${tool.name}
-      ${tool.description}`
-  );
+    tool => ({
+      name: tool.name,
+      description: tool.description,
+  }));
 }

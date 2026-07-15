@@ -1,15 +1,14 @@
 import type { LLMMessage } from "../llm/types.js";
-
-export interface ToolExecution {
-  tool: string;
-  input: string;
-  output: string;
-}
+import type {
+  AgentSource,
+  ToolExecution,
+} from "./types.js";
 
 export type AgentState = {
   prompt: string;
   history: LLMMessage[];
   context: string;
+  sources: AgentSource[];
   toolHistory: ToolExecution[];
   statusHistory: string[];
   completed: boolean;

@@ -35,5 +35,15 @@ export async function executeTool(
     `${tool.name} completed`
   );
 
+  state.sources.push(
+    ...result.sources
+  );
+
+  state.toolHistory.push({
+    tool: tool.name,
+    input: state.prompt,
+    output: result.output,
+  })
+
   return tool.execute(state.prompt);
 }
