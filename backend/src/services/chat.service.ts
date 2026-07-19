@@ -7,6 +7,7 @@ import * as messageRepository from "../repositories/message.repository.js";
 
 import { generateResponse } from "../llm/chat.js";
 // import { generateResponse } from "../providers/mock.provider.js";
+
 import { llm } from "../llm/llm.provider.js";
 
 import type { LLMMessage } from "../llm/types.js";
@@ -16,8 +17,10 @@ import { formatResponse } from '../prompts/response.format.js';
 import { logTokenUsage } from '../utils/token.logger.js';
 import { prepareChatContext } from './chatContext.service.js';
 
-import { runAgent } from "../agent/index.js";
-import { format } from 'path';
+import {
+  runAgent,
+  runAgentStream,
+} from "../agent/index.js";
 
 type ChatInput = {
   conversationId?: string;
@@ -84,16 +87,31 @@ export async function stream(
   );
 
   // Run Agent
-  const result = await runAgent({
-    prompt: req.body.prompt,
-    history,
-  });
+  // const result = await runAgent({
+  //   prompt: req.body.prompt,
+  //   history,
+  // });
 
   // SSE Headers
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
+
+  // Run Streaming Runtime
+  const result =
+    await runAgentStream({
+      prompt: req.body.prompt,
+      history,
+      async onToken(token) {
+        res.write(
+          `event: token\n`
+        );
+        res.write(
+          `data: ${token}\n\n`
+        );
+      },
+    });
 
   // Stream Status
   for (
@@ -104,33 +122,9 @@ export async function stream(
     res.write(`data: ${status}\n\n`);
   }
 
-  // Stream
-
-  let fullResponse = "";
-
-  const prompt: LLMMessage[] = [
-    {
-      role: "assistant",
-      content: result.answer,
-    },
-  ];
-
-  // const setupPrompt =
-  //   buildPrompt(
-  //     "general",
-  //     history,
-  //     // context
-  //   );
-
-  for await (const token of llm.stream(prompt)) {
-    fullResponse += token;
-    res.write(`event: token\n`);
-    res.write(`data: ${token}\n\n`);
-  }
-
   // Save Assistant Message
 
-  const formatted = formatResponse(fullResponse);
+  const formatted = formatResponse(result.answer);
 
   await messageRepository.create({
     conversationId: conversation.id,
@@ -145,14 +139,48 @@ export async function stream(
     totalTokens: 0
   });
 
-  // Finish
-  res.write(
-    "event: done\n"
-  );
+  // Return sources
+  res.write("event: sources\n");
+  res.write(`data: ${JSON.stringify(result.sources)}\n\n`);
 
-  res.write(
-    "data: complete\n\n"
-  );
+  // Finish
+  res.write("event: done\n");
+  res.write("data: complete\n\n");
 
   res.end();
+
+  // // Stream
+
+  // let fullResponse = "";
+
+  // const prompt: LLMMessage[] = [
+  //   {
+  //     role: "assistant",
+  //     content: result.answer,
+  //   },
+  // ];
+
+  // // const setupPrompt =
+  // //   buildPrompt(
+  // //     "general",
+  // //     history,
+  // //     // context
+  // //   );
+
+  // for await (const token of llm.stream(prompt)) {
+  //   fullResponse += token;
+  //   res.write(`event: token\n`);
+  //   res.write(`data: ${token}\n\n`);
+  // }
+
+  // // Finish
+  // res.write(
+  //   "event: done\n"
+  // );
+
+  // res.write(
+  //   "data: complete\n\n"
+  // );
+
+  // res.end();
 }
