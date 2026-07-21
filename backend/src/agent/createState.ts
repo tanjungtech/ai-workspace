@@ -2,18 +2,16 @@ import type { AgentState } from "./state.js";
 import type { LLMMessage } from "../llm/types.js";
 
 export function createState(
-  prompt: string,
+  userPrompt: string,
   history: LLMMessage[]
 ): AgentState {
   return {
-    prompt,
+    userPrompt,
     history,
     context: "",
     sources: [],
     toolHistory: [],
-    statusHistory: [
-      "Agent initialized",
-    ],
+    statusHistory: [],
     completed: false,
   };
 }

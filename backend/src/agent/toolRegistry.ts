@@ -4,42 +4,37 @@ import type {
 } from "./tool.js";
 
 import {
-  retrieveTool,
+  retrieveTool
 } from "./tools/retrieve.tool.js";
 
-const registry = new Map<string, Tool>();
+import {
+  summarizeTool
+} from "../tools/summarize.tool.js";
 
-registry.set(
-  retrieveTool.name,
-  retrieveTool
-);
+// export interface ToolDefinition {
+//   name: string;
+//   description: string;
+//   execute: (...args: any[]) => Promise<any>;
+// }
 
-export function registerTool(
-  tool: Tool
-) {
-  registry.set(
-    tool.name,
-    tool
-  );
-  // return tools.get(name);
-}
+const registry: Tool[] = [
+  retrieveTool,
+  summarizeTool,
+];
 
 export function getTool(
   name: string
-) {
-  return registry.get(name);
-}
-
-export function listTools() {
-  return Array.from(
-    registry.values()
+): Tool | undefined {
+  return registry.find(
+    tool => tool.name === name
   );
 }
 
 export function listToolDescriptions() {
-  return listTools().map(
+  return registry.map(
     tool => ({
       name: tool.name,
       description: tool.description,
-  }));
+    })
+  );
 }

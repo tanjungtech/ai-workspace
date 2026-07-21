@@ -3,17 +3,26 @@
 //   output: string;
 // };
 
-import type { AgentSource } from "./types.js";
+import type {
+  AgentSource,
+  AgentState,
+} from "./types.js";
 
 export interface ToolResult {
+  // Human-readable output
   output: string;
-  sources: AgentSource[];
+  // Optional context appended to the agent context
+  context?: string;
+  sources?: AgentSource[];
 }
 
 export interface Tool {
   name: string;
   description: string;
+  // execute(
+  //   state: AgentState
+  // ): Promise<ToolResult>;
   execute(
-    input: string
+    state: AgentState
   ): Promise<ToolResult>;
 }

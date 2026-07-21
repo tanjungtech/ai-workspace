@@ -1,39 +1,44 @@
 import * as retrieverService from "../../services/retriever.service.js";
 
 import type {
+  AgentState,
+  AgentSource
+} from "../../agent/types.js";
+
+import type {
   Tool,
-  ToolResult,
+  // ToolResult,
 } from "../tool.js";
 
 export const retrieveTool: Tool = {
   name: "retrieve",
 
   description:
-    "Search uploaded documents for information related to the user's question",
+    "Retrieve relevant document chunks.",
 
   async execute(
-    input: string
-  ): Promise<ToolResult> {
-    const chunks = await retrieverService.retrieve(input);
+    state: AgentState
+  ) {
+    const chunks = await retrieverService.retrieve(state.userPrompt);
+
+    const context =
+      chunks.map(
+        chunk => chunk.content
+      )
+      .join("\n\n");
+
+    const sources: AgentSource[] =
+      chunks.map(chunk => ({
+        id: chunk.document_id,
+        chunkIndex: chunk.chunk_index,
+        similarity: chunk.similarity,
+        preview: chunk.content.substring(0, 150),
+      }));
 
     return {
-      output:
-        chunks
-          .map(
-            chunk => chunk.content
-          )
-          .join("\n\n"),
-      sources:
-        chunks.map(chunk => ({
-          documentId: chunk.document_id,
-          documentName: chunk.document_name,
-          chunkIndex: chunk.chunk_index,
-          similarity: chunk.similarity,
-          preview:
-            chunk.content.substring(
-              chunk.content.substring(0, 150)
-            )
-        }))
+      output: `Retrieved ${chunks.length} chunks.`,
+      context,
+      sources,
     };
   },
 }

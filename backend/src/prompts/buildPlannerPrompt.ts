@@ -1,72 +1,72 @@
 import type { LLMMessage } from "../llm/types.js";
 
 export interface PlannerTool {
-
   name: string;
-
   description: string;
-
 }
 
 export function buildPlannerPrompt(
-
   prompt: string,
-
-  tools: PlannerTool[]
-
+  tools: PlannerTool[],
+  toolHistory: string[],
 ): LLMMessage[] {
 
   const toolList = tools
     .map(
       tool =>
-`Tool: ${tool.name}
-Description: ${tool.description}`
+        `Tool: ${tool.name}
+        Description: ${tool.description}`
     )
     .join("\n\n");
 
+  const previousTools =
+    toolHistory.length ?
+      toolHistory.join("\n")
+      : "None";
+
   return [
-
     {
-
       role: "system",
-
       content:
-`You are an AI planner.
+        `
+        You are an AI planning engine.
 
-Your task is to decide whether one of the available tools
-should be used before answering the user's question.
+        Your task is to decide whether another tool
+        should be executed.
 
-Return ONLY valid JSON.
+        Return ONLY valid JSON.
 
-Example:
+        If another tool is required:
 
-{
-  "tool":"retrieve",
-  "reason":"The question refers to uploaded documents."
-}
+        {
+          "action":"tool",
+          "tool":"retrieve",
+          "reason":"Need information from uploaded documents.",
+          "done":false
+        }
 
-Example:
+        If enough information has been collected:
 
-{
-  "tool":null,
-  "reason":"No tool is required."
-}
+        {
+          "action":"answer",
+          "tool":null,
+          "reason":"Ready to answer.",
+          "done":true
+        }
 
-Available tools:
+        Available tools:
 
-${toolList}
-`
+        ${toolList}
+
+        Already executed:
+
+        ${previousTools}
+        `
 
     },
-
     {
-
       role: "user",
-
       content: prompt
-
     }
-
   ];
-
 }

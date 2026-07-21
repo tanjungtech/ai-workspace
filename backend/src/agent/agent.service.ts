@@ -21,7 +21,8 @@ export async function runAgent(
     await executeTool(tool, prompt);
 
   return {
-    context: result.output,
+    // context: result.output,
+    context: result,
     toolUsed: tool,
     status:
       tool ?

@@ -16,6 +16,7 @@ import { formatResponse } from '../prompts/response.format.js';
 
 import { logTokenUsage } from '../utils/token.logger.js';
 import { prepareChatContext } from './chatContext.service.js';
+import * as memoryService from "../memory/memory.service.js";
 
 import {
   runAgent,
@@ -51,12 +52,7 @@ export async function chat({
   const formatted = formatResponse(result.answer);
 
   // Save Assistant
-  const assistantMessage =
-    await messageRepository.create({
-      conversationId: conversation.id,
-      role: "assistant",
-      content: formatted,
-    });
+  const assistantMessage = saveAssistantMessage(conversation.id, formatted, prompt);
   
   // Response
   return {
@@ -126,11 +122,7 @@ export async function stream(
 
   const formatted = formatResponse(result.answer);
 
-  await messageRepository.create({
-    conversationId: conversation.id,
-    role: "assistant",
-    content: formatted,
-  });
+  saveAssistantMessage(conversation.id, formatted, req.body.prompt);
 
   // Token Usage
   logTokenUsage({
@@ -183,4 +175,21 @@ export async function stream(
   // );
 
   // res.end();
+}
+
+async function saveAssistantMessage(
+  conversationId: string,
+  formatted: string,
+  prompt: string
+) {
+  await memoryService.extractAndStoreMemory({
+    conversationId,
+    userPrompt: prompt,
+    assistantResponse: formatted,
+  });
+  return await messageRepository.create({
+    conversationId,
+    role: "assistant",
+    content: formatted,
+  });
 }

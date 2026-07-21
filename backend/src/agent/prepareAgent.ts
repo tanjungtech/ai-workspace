@@ -20,7 +20,7 @@ export interface PreparedAgent {
   statusHistory: string[];
 }
 
-const MAX_ITERATIONS = 3;
+const MAX_ITERATIONS = 5;
 
 export async function prepareAgent(
   prompt: string,
@@ -38,8 +38,8 @@ export async function prepareAgent(
     state.statusHistory.push(`Planning (${iteration})`);
     const decision = await planner(state);
     state.statusHistory.push(decision.reason);
-    if (!decision.tool) {
-      state.completed = true;
+    if (decision.done || !decision.tool) {
+      // state.completed = true;
       break;
     }
     await executeTool(

@@ -2,7 +2,9 @@ import {
   getTool,
 } from "./toolRegistry.js";
 
-import type { AgentState, } from "./state.js";
+import type {
+  AgentState,
+} from "./state.js";
 
 export async function executeTool(
   toolName: string,
@@ -20,30 +22,37 @@ export async function executeTool(
     `Executing ${tool.name}`
   );
 
-  const result =
-    await tool.execute(state.prompt);
+  const result = await tool.execute(state);
 
   state.toolHistory.push({
     tool: tool.name,
-    input: state.prompt,
+    input: state.userPrompt,
     output: result.output,
   });
 
-  state.context = result.output;
+  if (result.context) {
+    state.context = result.context;
+  }
 
-  state.statusHistory.push(
-    `${tool.name} completed`
-  );
+  if (result.sources) {
+    state.sources = result.sources;
+  }
 
-  state.sources.push(
-    ...result.sources
-  );
+  // state.context = result.output;
 
-  state.toolHistory.push({
-    tool: tool.name,
-    input: state.prompt,
-    output: result.output,
-  })
+  // state.statusHistory.push(
+  //   `${tool.name} completed`
+  // );
 
-  return tool.execute(state.prompt);
+  // state.sources.push(
+  //   ...result.sources
+  // );
+
+  // state.toolHistory.push({
+  //   tool: tool.name,
+  //   input: state.prompt,
+  //   output: result.output,
+  // })
+
+  // return tool.execute(state.prompt);
 }
